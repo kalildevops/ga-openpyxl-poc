@@ -1,0 +1,57 @@
+name: Github Actions Openpyxl POC
+
+on:
+  workflow_dispatch:
+    inputs:
+    env_choice:
+      type: choice
+      description: Select environment
+      options:
+      - Dev
+      - Stage
+      - Prod
+    download_choice:
+      type: choice
+      description: Download spreadsheet
+      options:
+      - "No"
+      - "Yes"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  Check_APIs:
+    runs-on:
+      group: 'My_GA_Runner'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout/v2
+    
+    - name: Set up Python3
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    
+    - name: Install Python dependencies
+      working-directory: "./python/"
+      run: pip install -r requirements.txt
+
+    - name: Run Python script - Check APIs
+      working-directory: "./python/"
+      run: python app.py
+      env:
+        ENV_CHOICE: ${{ inputs.env_choice }}
+        DOWNLOAD_CHOICE: ${{ inputs.download_choice }}
+        API_TOKEN: ${{ secrets.API_TOKEN }}
+
+    - name: Upload Spreadsheet - ${{ inputs.env_choice }}
+      if: inputs.download_choice == 'Yes'
+      uses: actions/upload-artifact@v2
+      with:
+        name: api_check
+        path: ./python/*.xlsx
+    
